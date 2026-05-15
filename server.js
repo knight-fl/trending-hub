@@ -1030,29 +1030,33 @@ function fmtNum(n){if(!n)return '0';if(n>=1e8)return (n/1e8).toFixed(1)+'亿';if
 async function fetchInvidious(region){
   try{var r=await fetch('/api/inv-proxy?region='+region+'&_='+Date.now(),{signal:AbortSignal.timeout(35000),cache:'no-cache'});if(!r.ok)return[];var j=await r.json();return Array.isArray(j)?j:[];}catch(e){return[];}
 }
+var GCC_RAW = 'https://raw.githubusercontent.com/knight-fl/trending-hub/refs/heads/main/data';
+
 function refreshGccTab(tab){
   if(tab==='gcctop'){
     ['ytsa','ytae','tkgcc'].forEach(function(c){setGccSkeleton(c);});
-    fetch('/api/inv-proxy?region=SA&_='+Date.now(),{cache:'no-cache'}).then(r=>r.json()).then(function(v){renderGccColBrowser('ytsa',Array.isArray(v)?v:[]);}).catch(function(){});
-    fetch('/api/inv-proxy?region=AE&_='+Date.now(),{cache:'no-cache'}).then(r=>r.json()).then(function(v){renderGccColBrowser('ytae',Array.isArray(v)?v:[]);}).catch(function(){});
-    renderGccColBrowser('tkgcc',[]);
-    updateGccTime('gccTime',Date.now());
+    fetch(GCC_RAW+'/gcc-top.json?_='+Date.now(),{cache:'no-cache'}).then(r=>r.json()).then(function(d){
+      renderGccColBrowser('ytsa',(d.youtube_sa||[]).slice(0,30));
+      renderGccColBrowser('ytae',(d.youtube_ae||[]).slice(0,30));
+      renderGccColBrowser('tkgcc',[]);
+      updateGccTime('gccTime',Date.now());
+    }).catch(function(e){console.error(e);});
   }else{
     ['glytsa','glytae'].forEach(function(c){setGccSkeleton(c);});
-    fetch('/api/inv-proxy-life?_='+Date.now(),{cache:'no-cache'}).then(r=>r.json()).then(function(d){
+    fetch(GCC_RAW+'/gcc-life.json?_='+Date.now(),{cache:'no-cache'}).then(r=>r.json()).then(function(d){
       renderGccColBrowser('glytsa',(d.youtube_sa||[]).slice(0,20));
       renderGccColBrowser('glytae',(d.youtube_ae||[]).slice(0,20));
-    }).catch(function(){});
-    updateGccTime('gccLifeTime',Date.now());
+      updateGccTime('gccLifeTime',Date.now());
+    }).catch(function(e){console.error(e);});
   }
 }
 function refreshGccCol(col){
   setGccSkeleton(col);
   if(col==='tkgcc'){renderGccColBrowser('tkgcc',[]);return;}
-  var region=col==='ytsa'||col==='glytsa'?'SA':'AE';
-  fetch('/api/inv-proxy?region='+region+'&_='+Date.now(),{cache:'no-cache'}).then(r=>r.json()).then(function(v){
-    renderGccColBrowser(col,Array.isArray(v)?v:[]);
-  }).catch(function(){showGccColError(col,'请求失败');});
+  fetch(GCC_RAW+'/gcc-top.json?_='+Date.now(),{cache:'no-cache'}).then(r=>r.json()).then(function(d){
+    var items = col==='ytsa'||col==='glytsa' ? (d.youtube_sa||[]) : (d.youtube_ae||[]);
+    renderGccColBrowser(col, items.slice(0,30));
+  }).catch(function(e){console.error(e);showGccColError(col,'请求失败');});
 }
 function renderGccColBrowser(col,items){
   var g=document.getElementById('grid-'+col),e=document.getElementById('error-'+col),c=document.getElementById('count-'+col);
@@ -1060,7 +1064,7 @@ function renderGccColBrowser(col,items){
   if(!items.length){g.innerHTML='<div style="text-align:center;padding:20px;color:#999">无数据</div>';return;}
   g.innerHTML=items.slice(0,30).map(function(v,idx){
     var rc=idx<3?'r'+(idx+1):'';
-    var pic=(v.videoThumbnails&&v.videoThumbnails[0]&&v.videoThumbnails[0].url)||'';
+    var pic=v.thumb||'';
     return '<a class="lm-card" href="https://www.youtube.com/watch?v='+v.videoId+'" target="_blank" rel="noopener">'+
       '<div class="lm-pic-wrap">'+(pic?'<img class="lm-card-pic" src="'+pic+'" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\\'none\\'">':'<div class="lm-card-pic lm-card-pic-placeholder"><span>📺</span></div>')+
       '<span class="lm-rank-badge '+rc+'">'+(idx+1)+'</span></div>'+
