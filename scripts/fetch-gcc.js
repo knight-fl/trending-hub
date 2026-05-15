@@ -63,14 +63,14 @@ async function fetchTiktok() {
         const items = rawItems;
         if (items.length) {
           console.log(`  [tiktok] ${items.length} items`);
-          return items.slice(0, 50).map((item, idx) => ({
+          return items.slice(0, 20).map((item, idx) => ({
             rank: idx + 1,
-            title: item.desc || item.title || '',
-            id: item.id || item.video_id || '',
-            author: item.author?.nickname || item.author?.username || '',
-            playCount: item.stats?.playCount || item.play_count || item.views || 0,
-            thumb: (item.video?.cover?.url_list?.[0] || item.thumbnail || '').replace(/^http:/, 'https:'),
-            url: item.url || (item.id ? `https://www.tiktok.com/@user/video/${item.id}` : ''),
+            title: item.caption || item.title || '',
+            id: item.video_id || item.id || '',
+            author: item.author?.handle || item.author?.nickname || '',
+            playCount: item.stats?.playCount || item.stats?.views || 0,
+            thumb: ((item.thumbnails||[])[0] || item.media?.cover_url || '').replace(/^http:/, 'https:'),
+            url: `https://www.tiktok.com/@${item.author?.handle||'user'}/video/${item.video_id}`,
           }));
         }
       } catch (e) { console.log(`  [tiktok] ${e.message}`); }
