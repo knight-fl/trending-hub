@@ -12,7 +12,7 @@ const DATA_DIR = path.join(__dirname, '..', 'data');
 async function fetchYoutube(region) {
   console.log(`  [yt-${region}] yt-dlp...`);
   try {
-    const cmd = `yt-dlp --no-download --dump-json --playlist-end 30 --flat-playlist "https://www.youtube.com/feed/trending?gl=${region}"`;
+    const cmd = `yt-dlp --no-download --dump-json --playlist-end 30 --flat-playlist --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" --add-header "Accept-Language:en-US,en;q=0.9,ar;q=0.8" "https://www.youtube.com/feed/trending?gl=${region}"`;
     const raw = execSync(cmd, { encoding: 'utf8', timeout: 90000, maxBuffer: 5*1024*1024 });
     const lines = raw.trim().split('\n').filter(Boolean);
     if (!lines.length) { console.log(`  [yt-${region}] 0 lines`); return []; }
