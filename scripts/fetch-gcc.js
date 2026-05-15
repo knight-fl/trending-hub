@@ -63,9 +63,8 @@ async function fetchTiktok() {
           console.log(`  [tiktok] ${items.length} items`);
           // Debug thumb structure
           const first = items[0];
-          console.log(`  [tiktok] thumbnails type: ${typeof first.thumbnails}, isArray: ${Array.isArray(first.thumbnails)}`);
-          if (Array.isArray(first.thumbnails) && first.thumbnails[0]) console.log(`  [tiktok] thumb[0]: ${JSON.stringify(first.thumbnails[0]).slice(0,100)}`);
-          if (first.media) console.log(`  [tiktok] media keys: ${Object.keys(first.media).join(',')}`);
+          if (first.thumbnails) console.log(`  [tiktok] thumbnails keys: ${Object.keys(first.thumbnails).join(', ')}`);
+          if (first.thumbnails?.medium) console.log(`  [tiktok] medium thumb: ${JSON.stringify(first.thumbnails.medium).slice(0,100)}`);
 
           return items.slice(0, 20).map((item, idx) => {
             // Try multiple thumb sources
