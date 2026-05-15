@@ -49,8 +49,7 @@ async function fetchTiktok() {
   try {
     // Try trending endpoint with different region params
     const endpoints = [
-      `${TK_BASE}/tiktok/videos/trending?market=SA&max_results=30`,
-      `${TK_BASE}/tiktok/videos/trending?region=SA&max_results=30`,
+      `${TK_BASE}/tiktok/videos/trending?market=SA&max_results=20`,
     ];
     for (const url of endpoints) {
       try {
