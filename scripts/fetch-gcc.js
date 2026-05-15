@@ -47,13 +47,10 @@ async function fetchTiktok() {
   // Method 1: tiktok-scrape-trend (free, no API key)
   try {
     console.log('  [tiktok:free] trying tiktok-scrape-trend...');
-    const { default: trend } = await import('tiktok-scrape-trend');
-    let videos;
-    if (typeof trend === 'function') {
-      videos = await trend({ region: 'SA', count: 20 });
-    } else {
-      videos = await trend.default?.({ region: 'SA', count: 20 }) || await trend({ region: 'SA', count: 20 });
-    }
+    // Dynamic require handles ESM-in-CJS
+    const mod = require('tiktok-scrape-trend');
+    const trendFn = mod.default || mod;
+    const videos = typeof trendFn === 'function' ? await trendFn({ region: 'SA', count: 20 }) : [];
     if (Array.isArray(videos) && videos.length) {
       console.log(`  [tiktok:free] ${videos.length} items`);
       return videos.slice(0, 20).map((v, idx) => ({
