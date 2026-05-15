@@ -46,7 +46,13 @@ async function fetchYoutube(region) {
 
     // Extract ytInitialData JSON from HTML
     const match = res.text.match(/var ytInitialData\s*=\s*({.*?});<\/script>/s);
-    if (!match) { console.log(`  [yt-${region}] ytInitialData not found`); return []; }
+    if (!match) {
+      // Debug: show what's near "ytInitial" in the HTML
+      const idx = res.text.indexOf('ytInitial');
+      if (idx > 0) console.log(`  [yt-${region}] ytInitial at ${idx}, nearby: ` + res.text.slice(Math.max(0,idx-20), idx+200));
+      else console.log(`  [yt-${region}] ytInitial NOT in HTML at all`);
+      return [];
+    }
 
     const data = JSON.parse(match[1]);
     const videos = extractVideos(data, region);
