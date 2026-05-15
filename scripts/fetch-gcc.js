@@ -58,13 +58,13 @@ async function fetchYoutube(region) {
     // Debug: find all unique keys at depth 0-3
     const keys = new Set();
     function scanKeys(obj, depth) {
-      if (!obj || typeof obj !== 'object' || depth > 3) return;
+      if (!obj || typeof obj !== 'object' || depth > 10) return;
       if (Array.isArray(obj)) { obj.forEach(o => scanKeys(o, depth)); return; }
       Object.keys(obj).forEach(k => { keys.add(k); if (typeof obj[k] === 'object') scanKeys(obj[k], depth+1); });
     }
     scanKeys(data, 0);
-    const videoKeys = [...keys].filter(k => k.toLowerCase().includes('video') || k.toLowerCase().includes('render'));
-    console.log(`  [yt-${region}] top-level video-like keys: ${videoKeys.join(', ') || 'NONE'}`);
+    const rKeys = [...keys].filter(k => k.toLowerCase().includes('render'));
+    console.log(`  [yt-${region}] render keys (${keys.size} total): ${rKeys.slice(0,15).join(', ')}`);
     const videos = extractVideos(data, region);
     console.log(`  [yt-${region}] extracted ${videos.length} videos`);
     return videos;
@@ -84,7 +84,7 @@ function extractVideos(data, region) {
     seen.add(obj);
     if (Array.isArray(obj)) { obj.forEach(walk); return; }
     for (const key of Object.keys(obj)) {
-      if (key === 'videoRenderer' && obj[key] && obj[key].videoId) {
+      if (key.toLowerCase().includes('video') && typeof obj[key] === 'object' && obj[key].videoId) {
         const v = obj[key];
         const vid = v.videoId;
         if (!videos.find(x => x.videoId === vid)) {
