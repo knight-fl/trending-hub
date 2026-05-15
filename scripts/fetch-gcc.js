@@ -61,15 +61,31 @@ async function fetchTiktok() {
         const items = json?.data || json?.items || json?.videos || [];
         if (items.length) {
           console.log(`  [tiktok] ${items.length} items`);
-          return items.slice(0, 20).map((item, idx) => ({
-            rank: idx + 1,
-            title: item.caption || item.title || '',
-            id: item.video_id || item.id || '',
-            author: item.author?.handle || item.author?.nickname || '',
-            playCount: item.stats?.playCount || item.stats?.views || 0,
-            thumb: ((item.thumbnails||[])[0] || item.media?.cover_url || '').replace(/^http:/, 'https:'),
-            url: `https://www.tiktok.com/@${item.author?.handle||'user'}/video/${item.video_id}`,
-          }));
+          // Debug thumb structure
+          const first = items[0];
+          console.log(`  [tiktok] thumbnails type: ${typeof first.thumbnails}, isArray: ${Array.isArray(first.thumbnails)}`);
+          if (Array.isArray(first.thumbnails) && first.thumbnails[0]) console.log(`  [tiktok] thumb[0]: ${JSON.stringify(first.thumbnails[0]).slice(0,100)}`);
+          if (first.media) console.log(`  [tiktok] media keys: ${Object.keys(first.media).join(',')}`);
+
+          return items.slice(0, 20).map((item, idx) => {
+            // Try multiple thumb sources
+            let thumb = '';
+            if (Array.isArray(item.thumbnails) && item.thumbnails[0]) {
+              thumb = typeof item.thumbnails[0] === 'string' ? item.thumbnails[0] : (item.thumbnails[0].url || '');
+            }
+            if (!thumb && item.media) thumb = item.media.cover_url || item.media.cover?.url_list?.[0] || '';
+            thumb = thumb.replace(/^http:/, 'https:');
+
+            return {
+              rank: idx + 1,
+              title: item.caption || item.title || '',
+              id: item.video_id || item.id || '',
+              author: item.author?.handle || item.author?.nickname || '',
+              playCount: item.stats?.playCount || item.stats?.views || 0,
+              thumb,
+              url: `https://www.tiktok.com/@${item.author?.handle||'user'}/video/${item.video_id}`,
+            };
+          });
         }
       } catch (e) { console.log(`  [tiktok] ${e.message}`); }
     }
