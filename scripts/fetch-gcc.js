@@ -22,7 +22,7 @@ function fetchText(url, opts = {}, timeout = 15000) {
     }, (res) => {
       let data = '';
       res.on('data', c => data += c);
-      res.on('end', () => resolve({ ok: res.statusCode >= 200 && res.statusCode < 400, status: res.statusCode, text: data }));
+      res.on('end', () => resolve({ ok: res.statusCode >= 200 && res.statusCode < 400, status: res.statusCode, text: data, headers: res.headers }));
     });
     req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
     req.on('error', reject);
@@ -45,7 +45,7 @@ async function fetchYoutube(region) {
     if (!res.ok) { console.log(`  [yt-${region}] bad status`); return []; }
 
     // Extract ytInitialData JSON from HTML
-    const match = res.text.match(/var ytInitialData\s*=\s*({.*?});<\/script>/);
+    const match = res.text.match(/var ytInitialData\s*=\s*({.*?});<\/script>/s);
     if (!match) { console.log(`  [yt-${region}] ytInitialData not found`); return []; }
 
     const data = JSON.parse(match[1]);
@@ -102,7 +102,7 @@ async function fetchTiktok() {
     const cookieRes = await fetchText('https://www.tiktok.com/', {
       headers: { Referer: 'https://www.tiktok.com/' },
     });
-    const setCookie = cookieRes.headers ? '' : ''; // Simplified — cookie from response
+    const setCookie = cookieRes.headers?.['set-cookie']?.join('; ') || '';
 
     // Try multiple endpoints
     for (const ep of [
