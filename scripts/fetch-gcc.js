@@ -68,7 +68,9 @@ async function fetchTiktok() {
         console.log(`  [tiktok] ${url.slice(30,55)} HTTP ${res.status}`);
         if (!res.ok) continue;
         const json = await res.json();
-        const items = json?.itemList || json?.items || json?.aweme_list || [];
+        // Debug: show top-level keys
+        console.log(`  [tiktok] keys: ${Object.keys(json||{}).slice(0,10).join(', ')}`);
+        const items = json?.itemList || json?.items || json?.aweme_list || json?.data || [];
         if (items.length) {
           console.log(`  [tiktok] ${items.length} items`);
           return items.slice(0, 50).map((item, idx) => ({

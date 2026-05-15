@@ -1038,7 +1038,7 @@ function refreshGccTab(tab){
     fetch(GCC_RAW+'/gcc-top.json?_='+Date.now(),{cache:'no-cache'}).then(r=>r.json()).then(function(d){
       renderGccColBrowser('ytsa',(d.youtube_sa||[]).slice(0,30));
       renderGccColBrowser('ytae',(d.youtube_ae||[]).slice(0,30));
-      renderGccColBrowser('tkgcc',[]);
+      renderGccColTiktok('tkgcc',d.tiktok||[]);
       updateGccTime('gccTime',Date.now());
     }).catch(function(e){console.error(e);});
   }else{
@@ -1050,9 +1050,29 @@ function refreshGccTab(tab){
     }).catch(function(e){console.error(e);});
   }
 }
+function renderGccColTiktok(col,items){
+  var g=document.getElementById('grid-'+col),e=document.getElementById('error-'+col),c=document.getElementById('count-'+col);
+  e.style.display='none';g.style.display='';c.textContent=items.length;
+  if(!items.length){g.innerHTML='<div style="text-align:center;padding:20px;color:#999">暂无数据</div>';return;}
+  g.innerHTML=items.slice(0,30).map(function(v,idx){
+    var rc=idx<3?'r'+(idx+1):'';
+    var pic=v.thumb||'';
+    return '<a class="lm-card" href="'+v.url+'" target="_blank" rel="noopener">'+
+      '<div class="lm-pic-wrap">'+(pic?'<img class="lm-card-pic" src="'+pic+'" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\\'none\\'">':'<div class="lm-card-pic lm-card-pic-placeholder"><span>🎵</span></div>')+
+      '<span class="lm-rank-badge '+rc+'">'+(idx+1)+'</span></div>'+
+      '<div class="lm-card-body"><div class="lm-card-title">'+eh(v.title||'')+'</div>'+
+      '<div class="lm-card-meta"><span class="lm-card-author">'+eh(v.author||'')+'</span><span>▶ '+fmtNum(v.playCount||0)+'</span></div></div></a>';
+  }).join('');
+}
+
 function refreshGccCol(col){
   setGccSkeleton(col);
-  if(col==='tkgcc'){renderGccColBrowser('tkgcc',[]);return;}
+  if(col==='tkgcc'){
+    fetch(GCC_RAW+'/gcc-top.json?_='+Date.now(),{cache:'no-cache'}).then(r=>r.json()).then(function(d){
+      renderGccColTiktok('tkgcc',(d.tiktok||[]));
+    }).catch(function(){showGccColError(col,'请求失败');});
+    return;
+  }
   fetch(GCC_RAW+'/gcc-top.json?_='+Date.now(),{cache:'no-cache'}).then(r=>r.json()).then(function(d){
     var items = col==='ytsa'||col==='glytsa' ? (d.youtube_sa||[]) : (d.youtube_ae||[]);
     renderGccColBrowser(col, items.slice(0,30));
