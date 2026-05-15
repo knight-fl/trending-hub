@@ -61,19 +61,8 @@ async function fetchTiktok() {
         const items = json?.data || json?.items || json?.videos || [];
         if (items.length) {
           console.log(`  [tiktok] ${items.length} items`);
-          // Debug thumb structure
-          const first = items[0];
-          if (first.thumbnails) console.log(`  [tiktok] thumbnails keys: ${Object.keys(first.thumbnails).join(', ')}`);
-          if (first.thumbnails?.medium) console.log(`  [tiktok] medium thumb: ${JSON.stringify(first.thumbnails.medium).slice(0,100)}`);
-
           return items.slice(0, 20).map((item, idx) => {
-            // Try multiple thumb sources
-            let thumb = '';
-            if (Array.isArray(item.thumbnails) && item.thumbnails[0]) {
-              thumb = typeof item.thumbnails[0] === 'string' ? item.thumbnails[0] : (item.thumbnails[0].url || '');
-            }
-            if (!thumb && item.media) thumb = item.media.cover_url || item.media.cover?.url_list?.[0] || '';
-            thumb = thumb.replace(/^http:/, 'https:');
+            const thumb = (item.thumbnails?.cover_url || '').replace(/^http:/, 'https:');
 
             return {
               rank: idx + 1,
