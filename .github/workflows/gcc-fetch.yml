@@ -2,8 +2,8 @@ name: Fetch GCC Trending
 
 on:
   schedule:
-    - cron: '0 * * * *'  # Every hour
-  workflow_dispatch:       # Manual trigger
+    - cron: '0 * * * *'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -17,6 +17,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      - name: Install yt-dlp
+        run: pip install yt-dlp
 
       - name: Fetch GCC data
         run: node scripts/fetch-gcc.js
