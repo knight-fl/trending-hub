@@ -46,11 +46,13 @@ const TK_BASE = 'https://tiktok-scraper.omkar.cloud';
 async function fetchTiktok() {
   // Method 1: tiktok-scrape-trend (free, no API key)
   try {
-    console.log('  [tiktok:free] trying tiktok-scrape-trend...');
-    // Dynamic require handles ESM-in-CJS
-    const mod = require('tiktok-scrape-trend');
-    const trendFn = mod.default || mod;
-    const videos = typeof trendFn === 'function' ? await trendFn({ region: 'SA', count: 20 }) : [];
+    console.log('  [tiktok:free] trying via ESM subprocess...');
+    const { execSync } = require('child_process');
+    const raw = execSync(
+      `node --input-type=module -e "import trend from 'tiktok-scrape-trend'; console.log(JSON.stringify(await trend({region:'SA',count:20})))"`,
+      { encoding: 'utf8', timeout: 30000, maxBuffer: 2*1024*1024 }
+    ).trim();
+    const videos = JSON.parse(raw);
     if (Array.isArray(videos) && videos.length) {
       console.log(`  [tiktok:free] ${videos.length} items`);
       return videos.slice(0, 20).map((v, idx) => ({
