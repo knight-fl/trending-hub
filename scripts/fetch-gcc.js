@@ -39,54 +39,48 @@ async function fetchYoutube(region) {
   }
 }
 
-/* ─── TikTok GCC ─── */
+/* ─── TikTok via CreatorCrawl ─── */
+const CC_API_KEY = process.env.CREATORCRAWL_API_KEY || '';
+const CC_BASE = 'https://app.creatorcrawl.com/api';
+
 async function fetchTiktok() {
-  console.log('  [tiktok] fetching...');
+  if (!CC_API_KEY) { console.log('  [tiktok] no CREATORCRAWL_API_KEY set'); return []; }
+  console.log('  [tiktok] fetching via CreatorCrawl...');
   try {
-    // Step 1: get cookies from TikTok homepage
-    const cookieRes = await fetch('https://www.tiktok.com/', {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-      redirect: 'manual',
-    });
-    const cookies = cookieRes.headers.get('set-cookie') || '';
-
-    // Step 2: try TikTok trending API
+    // Try REST endpoints for TikTok trending
     const endpoints = [
-      'https://www.tiktok.com/api/trending/item_list/?aid=1988&app_name=tiktok_web&device_platform=web&region=SA&count=50',
-      'https://www.tiktok.com/api/recommend/item_list/?aid=1988&app_name=tiktok_web&device_platform=web&region=SA&count=50',
+      `${CC_BASE}/tiktok/trending?region=SA&count=50`,
+      `${CC_BASE}/tiktok/trending?country=SA&limit=50`,
+      `${CC_BASE}/trending/tiktok?region=SA&count=50`,
     ];
-
     for (const url of endpoints) {
       try {
         const res = await fetch(url, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            Referer: 'https://www.tiktok.com/',
-            Cookie: cookies,
-          },
+          headers: { 'x-api-key': CC_API_KEY, Accept: 'application/json' },
         });
-        console.log(`  [tiktok] ${url.slice(30,55)} HTTP ${res.status}`);
+        console.log(`  [tiktok] ${url.split('/').pop().slice(0,30)} HTTP ${res.status}`);
         if (!res.ok) continue;
         const json = await res.json();
-        // Debug: show top-level keys
-        console.log(`  [tiktok] keys: ${Object.keys(json||{}).slice(0,10).join(', ')}`);
-        const items = json?.itemList || json?.items || json?.aweme_list || json?.data || [];
+        console.log(`  [tiktok] keys: ${Object.keys(json).slice(0,8).join(', ')}`);
+
+        // Try various response formats
+        let items = json?.data || json?.items || json?.results || json?.videos || [];
         if (items.length) {
           console.log(`  [tiktok] ${items.length} items`);
           return items.slice(0, 50).map((item, idx) => ({
             rank: idx + 1,
-            title: item.desc || '',
-            id: item.id || '',
-            author: item.author?.nickname || item.author?.uniqueId || '',
-            playCount: item.stats?.playCount || 0,
-            thumb: (item.video?.cover?.url_list?.[0] || '').replace(/^http:/, 'https:'),
-            url: item.id ? `https://www.tiktok.com/@${item.author?.uniqueId||'user'}/video/${item.id}` : '',
+            title: item.desc || item.title || item.caption || '',
+            id: item.id || item.video_id || '',
+            author: item.author?.nickname || item.author?.username || item.uploader || '',
+            playCount: item.stats?.playCount || item.play_count || item.views || 0,
+            thumb: (item.video?.cover?.url_list?.[0] || item.thumbnail || item.thumb || '').replace(/^http:/, 'https:'),
+            url: item.url || (item.id ? `https://www.tiktok.com/@user/video/${item.id}` : ''),
           }));
         }
       } catch (e) { console.log(`  [tiktok] ${e.message}`); }
     }
-  } catch (e) { console.log(`  [tiktok] cookie: ${e.message}`); }
-  console.log('  [tiktok] 0 items (API may have changed)');
+  } catch (e) { console.log(`  [tiktok] ${e.message}`); }
+  console.log('  [tiktok] 0 items');
   return [];
 }
 
