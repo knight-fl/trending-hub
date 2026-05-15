@@ -1,40 +1,38 @@
 #!/usr/bin/env node
-/* Fetch GCC trending data using yt-dlp + TikTok best-effort.
-   Runs on GitHub Actions. */
+/* Fetch GCC trending via YouTube Data API v3 (official, free tier: 10k units/day).
+   API key passed as YOUTUBE_API_KEY env var (set in GitHub Secrets). */
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
+const API_KEY = process.env.YOUTUBE_API_KEY || '';
+if (!API_KEY) { console.error('YOUTUBE_API_KEY not set'); process.exit(1); }
 
-/* ─── YouTube via yt-dlp (pip install yt-dlp) ─── */
+/* Fetch trending videos for a region */
 async function fetchYoutube(region) {
-  console.log(`  [yt-${region}] yt-dlp...`);
+  console.log(`  [yt-${region}] fetching via official API...`);
   try {
-    const cmd = `yt-dlp --no-download --dump-json --playlist-end 30 --flat-playlist --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" --add-header "Accept-Language:en-US,en;q=0.9,ar;q=0.8" "https://www.youtube.com/feed/trending?gl=${region}"`;
-    const raw = execSync(cmd, { encoding: 'utf8', timeout: 90000, maxBuffer: 5*1024*1024 });
-    const lines = raw.trim().split('\n').filter(Boolean);
-    if (!lines.length) { console.log(`  [yt-${region}] 0 lines`); return []; }
-
-    const videos = lines.map((line, i) => {
-      try {
-        const v = JSON.parse(line);
-        return {
-          rank: i+1,
-          title: v.title || v.fulltitle || '',
-          videoId: v.id || v.display_id || '',
-          author: v.uploader || v.channel || '',
-          viewCount: v.view_count || 0,
-          thumb: (v.thumbnail || '').replace(/^http:/, 'https:'),
-          duration: v.duration_string || '',
-          url: v.webpage_url || `https://www.youtube.com/watch?v=${v.id}`,
-        };
-      } catch (_) { return null; }
-    }).filter(Boolean);
-
-    console.log(`  [yt-${region}] ${videos.length} videos`);
-    return videos;
+    const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&chart=mostPopular&regionCode=${region}&maxResults=50&key=${API_KEY}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      const err = await res.text();
+      console.log(`  [yt-${region}] HTTP ${res.status}: ${err.slice(0, 200)}`);
+      return [];
+    }
+    const data = await res.json();
+    const items = (data.items || []).map((item, idx) => ({
+      rank: idx + 1,
+      title:    item.snippet?.title || '',
+      videoId:  item.id || '',
+      author:   item.snippet?.channelTitle || '',
+      viewCount: parseInt(item.statistics?.viewCount || '0', 10),
+      thumb:    (item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url || '').replace(/^http:/, 'https:'),
+      duration: item.contentDetails?.duration || '',
+      url:      `https://www.youtube.com/watch?v=${item.id}`,
+    }));
+    console.log(`  [yt-${region}] ${items.length} videos`);
+    return items;
   } catch (e) {
     console.log(`  [yt-${region}] error: ${e.message}`);
     return [];
@@ -49,7 +47,7 @@ async function fetchYoutube(region) {
   const [ytSA, ytAE] = await Promise.all([fetchYoutube('SA'), fetchYoutube('AE')]);
 
   const gccTop  = { updated: new Date().toISOString(), youtube_sa: ytSA, youtube_ae: ytAE, tiktok: [] };
-  const gccLife = { updated: new Date().toISOString(), youtube_sa: ytSA.slice(0,20), youtube_ae: ytAE.slice(0,20) };
+  const gccLife = { updated: new Date().toISOString(), youtube_sa: ytSA.slice(0, 20), youtube_ae: ytAE.slice(0, 20) };
 
   fs.writeFileSync(path.join(DATA_DIR, 'gcc-top.json'),  JSON.stringify(gccTop));
   fs.writeFileSync(path.join(DATA_DIR, 'gcc-life.json'), JSON.stringify(gccLife));

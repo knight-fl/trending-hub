@@ -18,10 +18,9 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install yt-dlp
-        run: pip install yt-dlp
-
       - name: Fetch GCC data
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: node scripts/fetch-gcc.js
 
       - name: Commit & push
