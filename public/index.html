@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>热点聚合</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>热点聚合</h1>
+    <div class="header-controls">
+      <span class="refresh-time" id="lastRefresh">上次更新：--</span>
+      <button id="refreshBtn" onclick="refreshAll(true)">⟳ 刷新全部</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="column" data-platform="bilibili">
+      <div class="column-header" style="--accent: #fb7299">
+        <h2>B站 热门</h2>
+        <span class="count" id="count-bilibili">0</span>
+      </div>
+      <ol class="item-list" id="list-bilibili">
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+      </ol>
+      <div class="error-banner" id="error-bilibili" style="display:none"></div>
+    </section>
+
+    <section class="column" data-platform="weibo">
+      <div class="column-header" style="--accent: #ff8200">
+        <h2>微博 热搜</h2>
+        <span class="count" id="count-weibo">0</span>
+      </div>
+      <ol class="item-list" id="list-weibo">
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+      </ol>
+      <div class="error-banner" id="error-weibo" style="display:none"></div>
+    </section>
+
+    <section class="column" data-platform="douyin">
+      <div class="column-header" style="--accent: #00a8ff">
+        <h2>抖音 热点</h2>
+        <span class="count" id="count-douyin">0</span>
+      </div>
+      <ol class="item-list" id="list-douyin">
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+        <li class="skeleton"><div class="skeleton-line"></div></li>
+      </ol>
+      <div class="error-banner" id="error-douyin" style="display:none"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
