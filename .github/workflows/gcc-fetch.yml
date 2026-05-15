@@ -21,7 +21,7 @@ jobs:
       - name: Fetch GCC data
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-          CREATORCRAWL_API_KEY: ${{ secrets.CREATORCRAWL_API_KEY }}
+          TIKTOK_SCRAPER_API_KEY: ${{ secrets.TIKTOK_SCRAPER_API_KEY }}
         run: node scripts/fetch-gcc.js
 
       - name: Commit & push

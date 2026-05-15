@@ -39,41 +39,36 @@ async function fetchYoutube(region) {
   }
 }
 
-/* ─── TikTok via CreatorCrawl ─── */
-const CC_API_KEY = process.env.CREATORCRAWL_API_KEY || '';
-const CC_BASE = 'https://app.creatorcrawl.com/api';
+/* ─── TikTok via omkarcloud ─── */
+const TK_API_KEY = process.env.TIKTOK_SCRAPER_API_KEY || '';
+const TK_BASE = 'https://tiktok-scraper.omkar.cloud';
 
 async function fetchTiktok() {
-  if (!CC_API_KEY) { console.log('  [tiktok] no CREATORCRAWL_API_KEY set'); return []; }
-  console.log('  [tiktok] fetching via CreatorCrawl...');
+  if (!TK_API_KEY) { console.log('  [tiktok] no TIKTOK_SCRAPER_API_KEY set'); return []; }
+  console.log('  [tiktok] fetching via omkarcloud...');
   try {
-    // Try REST endpoints for TikTok trending
+    // Try trending endpoint with different region params
     const endpoints = [
-      `${CC_BASE}/tiktok/trending?region=SA&count=50`,
-      `${CC_BASE}/tiktok/trending?country=SA&limit=50`,
-      `${CC_BASE}/trending/tiktok?region=SA&count=50`,
+      `${TK_BASE}/tiktok/videos/trending?market=SA&max_results=30`,
+      `${TK_BASE}/tiktok/videos/trending?region=SA&max_results=30`,
     ];
     for (const url of endpoints) {
       try {
-        const res = await fetch(url, {
-          headers: { 'x-api-key': CC_API_KEY, Accept: 'application/json' },
-        });
-        console.log(`  [tiktok] ${url.split('/').pop().slice(0,30)} HTTP ${res.status}`);
-        if (!res.ok) continue;
+        const res = await fetch(url, { headers: { 'API-Key': TK_API_KEY } });
+        console.log(`  [tiktok] ${new URL(url).pathname.slice(0,30)} HTTP ${res.status}`);
+        if (!res.ok) { console.log(`  [tiktok] body: ${(await res.text()).slice(0,100)}`); continue; }
         const json = await res.json();
         console.log(`  [tiktok] keys: ${Object.keys(json).slice(0,8).join(', ')}`);
-
-        // Try various response formats
-        let items = json?.data || json?.items || json?.results || json?.videos || [];
+        const items = json?.data || json?.items || json?.videos || [];
         if (items.length) {
           console.log(`  [tiktok] ${items.length} items`);
           return items.slice(0, 50).map((item, idx) => ({
             rank: idx + 1,
-            title: item.desc || item.title || item.caption || '',
+            title: item.desc || item.title || '',
             id: item.id || item.video_id || '',
-            author: item.author?.nickname || item.author?.username || item.uploader || '',
+            author: item.author?.nickname || item.author?.username || '',
             playCount: item.stats?.playCount || item.play_count || item.views || 0,
-            thumb: (item.video?.cover?.url_list?.[0] || item.thumbnail || item.thumb || '').replace(/^http:/, 'https:'),
+            thumb: (item.video?.cover?.url_list?.[0] || item.thumbnail || '').replace(/^http:/, 'https:'),
             url: item.url || (item.id ? `https://www.tiktok.com/@user/video/${item.id}` : ''),
           }));
         }
