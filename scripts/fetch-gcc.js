@@ -44,58 +44,31 @@ const TK_API_KEY = process.env.TIKTOK_SCRAPER_API_KEY || '';
 const TK_BASE = 'https://tiktok-scraper.omkar.cloud';
 
 async function fetchTiktok() {
-  // Method 1: tiktok-scrape-trend (free, no API key)
+  if (!TK_API_KEY) { console.log('  [tiktok] no API key set'); return []; }
+  console.log('  [tiktok] fetching via omkarcloud...');
   try {
-    console.log('  [tiktok:free] trying via ESM subprocess...');
-    const { execSync } = require('child_process');
-    const raw = execSync(
-      `node --input-type=module -e "import trend from 'tiktok-scrape-trend'; console.log(JSON.stringify(await trend({region:'SA',count:20})))"`,
-      { encoding: 'utf8', timeout: 30000, maxBuffer: 2*1024*1024 }
-    ).trim();
-    const videos = JSON.parse(raw);
-    if (Array.isArray(videos) && videos.length) {
-      console.log(`  [tiktok:free] ${videos.length} items`);
-      return videos.slice(0, 20).map((v, idx) => ({
-        rank: idx + 1,
-        title: v.caption || v.title || v.desc || '',
-        id: v.video_id || v.id || '',
-        author: v.author?.handle || v.author?.username || v.uploader || '',
-        playCount: v.stats?.playCount || v.play_count || v.views || 0,
-        thumb: (v.thumbnails?.cover_url || v.thumbnail || v.cover || '').replace(/^http:/, 'https:'),
-        url: `https://www.tiktok.com/@${v.author?.handle||'user'}/video/${v.video_id||v.id}`,
-      }));
-    }
-    console.log('  [tiktok:free] no items returned');
-  } catch (e) { console.log(`  [tiktok:free] ${e.message}`); }
-
-  // Method 2: omkarcloud (paid fallback)
-  if (TK_API_KEY) {
-    console.log('  [tiktok:paid] trying omkarcloud...');
-    try {
-      const res = await fetch(`${TK_BASE}/tiktok/videos/trending?market=SA&max_results=20`, {
-        headers: { 'API-Key': TK_API_KEY },
-      });
-      console.log(`  [tiktok:paid] HTTP ${res.status}`);
-      if (res.ok) {
-        const json = await res.json();
-        const items = json?.data || json?.items || json?.videos || [];
-        if (items.length) {
-          console.log(`  [tiktok:paid] ${items.length} items`);
-          return items.slice(0, 20).map((item, idx) => ({
-            rank: idx + 1,
-            title: item.caption || item.title || '',
-            id: item.video_id || item.id || '',
-            author: item.author?.handle || item.author?.nickname || '',
-            playCount: item.stats?.playCount || item.stats?.views || 0,
-            thumb: (item.thumbnails?.cover_url || '').replace(/^http:/, 'https:'),
-            url: `https://www.tiktok.com/@${item.author?.handle||'user'}/video/${item.video_id}`,
-          }));
-        }
+    const res = await fetch(`${TK_BASE}/tiktok/videos/trending?market=SA&max_results=20`, {
+      headers: { 'API-Key': TK_API_KEY },
+    });
+    console.log(`  [tiktok] HTTP ${res.status}`);
+    if (res.ok) {
+      const json = await res.json();
+      const items = json?.data || json?.items || json?.videos || [];
+      if (items.length) {
+        console.log(`  [tiktok] ${items.length} items`);
+        return items.slice(0, 20).map((item, idx) => ({
+          rank: idx + 1,
+          title: item.caption || item.title || '',
+          id: item.video_id || item.id || '',
+          author: item.author?.handle || item.author?.nickname || '',
+          playCount: item.stats?.playCount || item.stats?.views || 0,
+          thumb: (item.thumbnails?.cover_url || '').replace(/^http:/, 'https:'),
+          url: `https://www.tiktok.com/@${item.author?.handle||'user'}/video/${item.video_id}`,
+        }));
       }
-    } catch (e) { console.log(`  [tiktok:paid] ${e.message}`); }
-  }
-
-  console.log('  [tiktok] 0 items (both methods failed)');
+    }
+  } catch (e) { console.log(`  [tiktok] ${e.message}`); }
+  console.log('  [tiktok] 0 items');
   return [];
 }
 

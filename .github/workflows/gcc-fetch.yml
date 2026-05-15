@@ -18,9 +18,6 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install tiktok-scrape-trend
-        run: npm install tiktok-scrape-trend
-
       - name: Fetch GCC data
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
