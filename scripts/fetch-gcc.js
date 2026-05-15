@@ -44,41 +44,59 @@ const TK_API_KEY = process.env.TIKTOK_SCRAPER_API_KEY || '';
 const TK_BASE = 'https://tiktok-scraper.omkar.cloud';
 
 async function fetchTiktok() {
-  if (!TK_API_KEY) { console.log('  [tiktok] no TIKTOK_SCRAPER_API_KEY set'); return []; }
-  console.log('  [tiktok] fetching via omkarcloud...');
+  // Method 1: tiktok-scrape-trend (free, no API key)
   try {
-    // Try trending endpoint with different region params
-    const endpoints = [
-      `${TK_BASE}/tiktok/videos/trending?market=SA&max_results=20`,
-    ];
-    for (const url of endpoints) {
-      try {
-        const res = await fetch(url, { headers: { 'API-Key': TK_API_KEY } });
-        console.log(`  [tiktok] ${new URL(url).pathname.slice(0,30)} HTTP ${res.status}`);
-        if (!res.ok) { console.log(`  [tiktok] body: ${(await res.text()).slice(0,100)}`); continue; }
+    console.log('  [tiktok:free] trying tiktok-scrape-trend...');
+    const { default: trend } = await import('tiktok-scrape-trend');
+    let videos;
+    if (typeof trend === 'function') {
+      videos = await trend({ region: 'SA', count: 20 });
+    } else {
+      videos = await trend.default?.({ region: 'SA', count: 20 }) || await trend({ region: 'SA', count: 20 });
+    }
+    if (Array.isArray(videos) && videos.length) {
+      console.log(`  [tiktok:free] ${videos.length} items`);
+      return videos.slice(0, 20).map((v, idx) => ({
+        rank: idx + 1,
+        title: v.caption || v.title || v.desc || '',
+        id: v.video_id || v.id || '',
+        author: v.author?.handle || v.author?.username || v.uploader || '',
+        playCount: v.stats?.playCount || v.play_count || v.views || 0,
+        thumb: (v.thumbnails?.cover_url || v.thumbnail || v.cover || '').replace(/^http:/, 'https:'),
+        url: `https://www.tiktok.com/@${v.author?.handle||'user'}/video/${v.video_id||v.id}`,
+      }));
+    }
+    console.log('  [tiktok:free] no items returned');
+  } catch (e) { console.log(`  [tiktok:free] ${e.message}`); }
+
+  // Method 2: omkarcloud (paid fallback)
+  if (TK_API_KEY) {
+    console.log('  [tiktok:paid] trying omkarcloud...');
+    try {
+      const res = await fetch(`${TK_BASE}/tiktok/videos/trending?market=SA&max_results=20`, {
+        headers: { 'API-Key': TK_API_KEY },
+      });
+      console.log(`  [tiktok:paid] HTTP ${res.status}`);
+      if (res.ok) {
         const json = await res.json();
-        console.log(`  [tiktok] keys: ${Object.keys(json).slice(0,8).join(', ')}`);
         const items = json?.data || json?.items || json?.videos || [];
         if (items.length) {
-          console.log(`  [tiktok] ${items.length} items`);
-          return items.slice(0, 20).map((item, idx) => {
-            const thumb = (item.thumbnails?.cover_url || '').replace(/^http:/, 'https:');
-
-            return {
-              rank: idx + 1,
-              title: item.caption || item.title || '',
-              id: item.video_id || item.id || '',
-              author: item.author?.handle || item.author?.nickname || '',
-              playCount: item.stats?.playCount || item.stats?.views || 0,
-              thumb,
-              url: `https://www.tiktok.com/@${item.author?.handle||'user'}/video/${item.video_id}`,
-            };
-          });
+          console.log(`  [tiktok:paid] ${items.length} items`);
+          return items.slice(0, 20).map((item, idx) => ({
+            rank: idx + 1,
+            title: item.caption || item.title || '',
+            id: item.video_id || item.id || '',
+            author: item.author?.handle || item.author?.nickname || '',
+            playCount: item.stats?.playCount || item.stats?.views || 0,
+            thumb: (item.thumbnails?.cover_url || '').replace(/^http:/, 'https:'),
+            url: `https://www.tiktok.com/@${item.author?.handle||'user'}/video/${item.video_id}`,
+          }));
         }
-      } catch (e) { console.log(`  [tiktok] ${e.message}`); }
-    }
-  } catch (e) { console.log(`  [tiktok] ${e.message}`); }
-  console.log('  [tiktok] 0 items');
+      }
+    } catch (e) { console.log(`  [tiktok:paid] ${e.message}`); }
+  }
+
+  console.log('  [tiktok] 0 items (both methods failed)');
   return [];
 }
 
