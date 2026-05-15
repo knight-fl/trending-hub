@@ -55,6 +55,16 @@ async function fetchYoutube(region) {
     }
 
     const data = JSON.parse(match[1]);
+    // Debug: find all unique keys at depth 0-3
+    const keys = new Set();
+    function scanKeys(obj, depth) {
+      if (!obj || typeof obj !== 'object' || depth > 3) return;
+      if (Array.isArray(obj)) { obj.forEach(o => scanKeys(o, depth)); return; }
+      Object.keys(obj).forEach(k => { keys.add(k); if (typeof obj[k] === 'object') scanKeys(obj[k], depth+1); });
+    }
+    scanKeys(data, 0);
+    const videoKeys = [...keys].filter(k => k.toLowerCase().includes('video') || k.toLowerCase().includes('render'));
+    console.log(`  [yt-${region}] top-level video-like keys: ${videoKeys.join(', ') || 'NONE'}`);
     const videos = extractVideos(data, region);
     console.log(`  [yt-${region}] extracted ${videos.length} videos`);
     return videos;
